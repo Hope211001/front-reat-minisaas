@@ -1,13 +1,12 @@
 import express from "express";
 import supabase from "../config/supabaseClient.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/:leads", async (req, res) => {
-  const { leads } = req.params;
-
+router.get("/leads", authMiddleware, async (req, res) => {
   const { data, error } = await supabase
-    .from(leads)
+    .from("leads")
     .select("*");
 
   if (error) {
