@@ -7,7 +7,7 @@ class AuthController {
   static async register(req, res) {
     try {
       console.log('📝 Tentative d\'inscription:', req.body.email);
-      
+
       const { email, password, name } = req.body;
 
       if (!email || !password) {
@@ -44,9 +44,9 @@ class AuthController {
 
       if (error) {
         console.error('❌ Erreur Supabase:', error);
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: 'Erreur lors de la création de l\'utilisateur',
-          details: error.message 
+          details: error.message
         });
       }
 
@@ -65,9 +65,9 @@ class AuthController {
       });
     } catch (error) {
       console.error('❌ Erreur inscription:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Erreur lors de l\'inscription',
-        details: error.message 
+        details: error.message
       });
     }
   }
@@ -75,7 +75,7 @@ class AuthController {
   static async login(req, res) {
     try {
       console.log('🔐 Tentative de connexion:', req.body.email);
-      
+
       const { email, password } = req.body;
 
       if (!email || !password) {
@@ -94,7 +94,7 @@ class AuthController {
       }
 
       const validPassword = await bcrypt.compare(password, user.password);
-      
+
       if (!validPassword) {
         console.log('⚠️ Mot de passe incorrect pour:', email);
         return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
@@ -116,31 +116,39 @@ class AuthController {
       });
     } catch (error) {
       console.error('❌ Erreur connexion:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: 'Erreur lors de la connexion',
-        details: error.message 
+        details: error.message
       });
     }
   }
 
+  // --- DANS TON BACKEND EXPRESS ---
+
   static async getProfile(req, res) {
     try {
+      // req.user.id est extrait du token par ton middleware authenticateToken
       const { data: user, error } = await supabase
         .from('users')
-        .select('id, email, name, created_at')
+        .select('id, email, name, role, created_at') // 👈 AJOUTE 'role' ICI
         .eq('id', req.user.id)
         .single();
 
-      if (error) {
+      if (error || !user) {
+        console.log('❌ Utilisateur non trouvé pour l\'ID:', req.user.id);
         return res.status(404).json({ error: 'Utilisateur non trouvé' });
       }
 
-      res.json({ user });
+      // On renvoie l'utilisateur avec toutes les colonnes sélectionnées
+      res.json({
+        user: user
+      });
     } catch (error) {
-      console.error('❌ Erreur profil:', error);
+      console.error('❌ Erreur getProfile:', error);
       res.status(500).json({ error: 'Erreur lors de la récupération du profil' });
     }
   }
+
 
   static async verifyToken(req, res) {
     res.json({ valid: true, user: req.user });
@@ -149,10 +157,10 @@ class AuthController {
   static async logout(req, res) {
     try {
       console.log('👋 Déconnexion utilisateur');
-      
+
       // Si tu utilisais des cookies, on les supprimerait ici :
-       res.clearCookie('token'); 
-      
+      res.clearCookie('token');
+
       // Pour le JWT stocké en LocalStorage, on renvoie juste un succès.
       // C'est le Frontend qui doit supprimer le token.
       res.status(200).json({ message: 'Déconnexion réussie' });
